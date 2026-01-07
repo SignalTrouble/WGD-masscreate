@@ -1,9 +1,84 @@
+# ENG:
+
+# WGD-masscreate
+A compact CLI tool for creating and deleting WireGuard interfaces using WGDashboard.
+This tool is particularly suited for IoT remote maintenance solutions where each station should be accessed in the same way (same IP range, etc.).
+WARNING! The created interfaces are all identical from a network perspective, meaning only one can be active at a time (e.g., the specific facility being accessed). This saves IPs in the WG-WAN and prevents cross-communication between interfaces of the same type (e.g., facilities). The configuration of remote access interfaces must accordingly have a different WG server IP, and the endpoint IPs must be adjusted.
+Prerequisites
+
+config.ini in the working directory (or via --config), section [defaults] with all keys.
+Binaries: wg, wg-quick, ip, systemctl.
+Access to WGDashboard (API key) and SQLite DB.
+
+## Usage (Examples)
+
+Review/adjust configuration in config.ini.
+Generate:
+
+   python3 masscreate.py --config config.ini -p APW -s 1 -e 10 -k <API_KEY>
+Interactive input (prefix, start, end, API key) is available if not set via CLI.
+
+Optional: Dry-run without writing:
+
+   python3 masscreate.py --config config.ini -p APW -s 1 -e 10 -k <API_KEY> --dry-run
+
+Delete only (interfaces, routes, .conf files, DB tables in range):
+
+   python3 masscreate.py --config config.ini -p APW -s 1 -e 10 --delete-only
+Additional Peers per Interface
+
+Any number of static peers can be defined in the ini as sections [peer.<name>], e.g.:
+
+  [peer.client1]
+  public_key = AbCd...
+  allowed_ips = 10.128.244.50/32, 192.168.50.0/24
+  endpoint = gw.example.com:51820      ; optional
+  keepalive = 25                       ; optional
+
+Each defined peer section is included as an additional [Peer] block in every generated .conf.
+
+## Options
+
+-p, --prefix PREFIX — Prefix for filenames, e.g., APW
+-s, --start NUM — Start number (supports leading zeros in input)
+-e, --end NUM — End number
+-k, --api-key KEY — WGDashboard API key
+-d, --dir PATH — Target directory for .conf (default from ini)
+-a, --address CIDR — Interface address
+-l, --port PORT — ListenPort
+-i, --allowed-ips LIST — Peer AllowedIPs in server config
+--peer-name NAME — Peer name in WGDashboard
+--endpoint HOST:PORT — Server endpoint for client config
+--delete-existing — Delete existing .conf files in target (except those starting with _)
+-n, --dry-run — Display only, don't write anything
+--dashboard-url URL — WGDashboard base URL
+--dashboard-db PATH — Path to WGDashboard SQLite DB
+--dashboard-service NAME — Service name (systemctl) for WGDashboard
+--peer-dns DNS — DNS for client
+--peer-mtu MTU — MTU for client
+--peer-keepalive SEC — PersistentKeepalive for client
+--endpoint-allowed-ips LIST — AllowedIPs in client config
+--config PATH — Path to ini file
+--delete-only — Delete only in specified range: stop/delete wg interface, remove associated routes (from --allowed-ips), delete .conf, clear matching DB tables (prefix-based)
+
+## Notes
+
+The ini file is mandatory; missing keys will cause the tool to abort.
+Numbering supports leading zeros, e.g., -s 001 -e 010 generates 001 … 010.
+API updates require WGDashboard to be running; the tool can restart the service and checks its status.
+
+## Security
+
+Private keys are generated locally; .conf files are set to mode 0600.
+
+# DEU:
+
 # WGD-masscreate
 
 Kurzes CLI-Tool zum Erzeugen und Löschen von WireGuard-Interfaces mit WGDashboard.
 Das Tool eignet sich insbesondere für IoT Fernwartungslösungen, bei denen jede Station auf dem gleichen Weg (gleicher IP-Bereich etc) angesprochen werden soll.
 
-ACHTUNG!: Die erstellte Interfaces sind netzwerkseitig alle gleich, d.h. es kann nur eines aktiviert werden (bspw. die betroffene Anlage,a uf die zugegriffen werden soll). Das spart IPs im WG-WAN und ist unterbindet Querkommunikation zwischen Interfaces gleicher Art (zB. Anlagen). Die Konfig der Ferzugriffs-Interfaces muss entsprechend eine andere WG-Server IP haben, die Endpoint-IPs müssen angepasst werden.
+ACHTUNG!: Die erstellte Interfaces sind netzwerkseitig alle gleich, d.h. es kann nur eines aktiviert werden (bspw. die betroffene Anlage, auf die zugegriffen werden soll). Das spart IPs im WG-WAN und unterbindet Querkommunikation zwischen Interfaces gleicher Art (zB. Anlagen). Die Konfig der Ferzugriffs-Interfaces muss entsprechend eine andere WG-Server IP haben, die Endpoint-IPs müssen angepasst werden.
 
 ## Voraussetzungen
 - `config.ini` im Arbeitsverzeichnis (oder via `--config`), Abschnitt `[defaults]` mit allen Keys.
